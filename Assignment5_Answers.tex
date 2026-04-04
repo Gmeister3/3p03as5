@@ -1,0 +1,394 @@
+\documentclass[12pt]{article}
+\usepackage{amsmath, amssymb}
+\usepackage{geometry}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{hyperref}
+\geometry{margin=1in}
+
+\title{Assignment 5 -- Complete Written Answers}
+\author{COSC 3P03}
+\date{}
+
+\begin{document}
+\maketitle
+
+% ─────────────────────────────────────────────────────────────
+\section*{Question 1 -- Subset-Sum}
+
+\subsection*{(a) What is a pseudopolynomial algorithm?}
+
+A \textbf{pseudopolynomial algorithm} is one whose running time is polynomial
+in the \emph{numeric value} of the input (e.g., the target sum $T$), but
+exponential in the \emph{size} of the input measured in bits.  Because a
+number $T$ can be encoded in only $\lceil\log_2 T\rceil$ bits, an algorithm
+that runs in time $O(T)$ is actually exponential in the input bit-length --
+it just does not look that way when $T$ is written as a decimal integer.
+Pseudopolynomial algorithms are efficient in practice when the numbers
+involved are small, but they are \textbf{not} truly polynomial-time
+algorithms.
+
+% ─────────────────────────────────────────────────────────────
+\subsection*{(b) Running time of the DP Subset-Sum algorithm, and why it is pseudopolynomial}
+
+\textbf{Running time:} $O(n \cdot T)$
+
+The standard DP constructs a boolean table $\mathit{dp}[0\ldots n][0\ldots T]$
+where $\mathit{dp}[i][j] = \mathrm{TRUE}$ iff some subset of the first $i$
+elements sums to $j$.  Filling each cell takes $O(1)$; there are
+$(n+1)(T+1)$ cells, giving $\mathbf{O(nT)}$ total time.
+
+\textbf{Why pseudopolynomial:}  The input size in bits is
+$O(n\log M + \log T)$, where $M$ is the largest element value.  The value
+$T$ itself requires only $O(\log T)$ bits to represent.  The running time
+$O(nT) = O(n \cdot 2^{\log T})$, which is \textbf{exponential} in the
+bit-length of $T$.  Hence the algorithm is polynomial in the \emph{numeric
+value} of $T$ but not in the \emph{bit-length} of the input -- the
+definition of pseudopolynomial.
+
+% ─────────────────────────────────────────────────────────────
+\subsection*{(c) DP Table for $X = \{4,5,6,2,7,8,9\}$, $T = 10$}
+
+\textbf{Recurrence:}
+$\mathit{dp}[i][j] = \mathit{dp}[i-1][j]\ \lor\ (j \ge X[i]\ \land\ \mathit{dp}[i-1][j-X[i]])$
+
+\textbf{Base case:} $\mathit{dp}[0][0] = \mathrm{T}$,
+$\mathit{dp}[0][j] = \mathrm{F}$ for $j > 0$.
+
+\medskip
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|c|}
+\hline
+        & $j{=}0$ & $j{=}1$ & $j{=}2$ & $j{=}3$ & $j{=}4$ & $j{=}5$ & $j{=}6$ & $j{=}7$ & $j{=}8$ & $j{=}9$ & $j{=}10$ \\
+\hline
+$i{=}0$      & T & F & F & F & F & F & F & F & F & F & F  \\
+$i{=}1\ (4)$ & T & F & F & F & T & F & F & F & F & F & F  \\
+$i{=}2\ (5)$ & T & F & F & F & T & T & F & F & F & T & F  \\
+$i{=}3\ (6)$ & T & F & F & F & T & T & T & F & F & T & \textbf{T}  \\
+$i{=}4\ (2)$ & T & F & T & F & T & T & T & T & T & T & T  \\
+$i{=}5\ (7)$ & T & F & T & F & T & T & T & T & T & T & T  \\
+$i{=}6\ (8)$ & T & F & T & F & T & T & T & T & T & T & T  \\
+$i{=}7\ (9)$ & T & F & T & F & T & T & T & T & T & T & T  \\
+\hline
+\end{tabular}
+\end{center}
+
+\textbf{Answer:} $\mathit{dp}[7][10] = \mathrm{TRUE}$.  Yes, there is a
+subset of $X$ with sum $T = 10$.  The first witness appears at row $i{=}3$:
+subset $\{4, 6\}$ ($4 + 6 = 10$).
+
+% ─────────────────────────────────────────────────────────────
+\section*{Question 2 -- CircuitSatisfiability to SAT}
+
+\textbf{Circuit structure (from Figure 1):}
+
+\medskip
+\begin{center}
+\begin{tabular}{|c|c|c|l|}
+\hline
+Gate & Type & Inputs  & Definition \\
+\hline
+$g_1$ & AND & $x_1,x_2$    & $g_1 = x_1 \land x_2$ \\
+$g_2$ & NOT & $x_4$        & $g_2 = \lnot x_4$ \\
+$g_3$ & OR  & $x_3,x_2$    & $g_3 = x_3 \lor x_2$ \\
+$g_4$ & OR  & $g_1,g_2$    & $g_4 = g_1 \lor g_2 = (x_1\land x_2)\lor\lnot x_4$ \\
+$g_5$ & AND & $g_2,g_3$    & $g_5 = g_2 \land g_3 = \lnot x_4\land(x_3\lor x_2)$ \\
+$y$   & NOR & $g_4,g_5$    & $y = \lnot(g_4\lor g_5)$ \\
+\hline
+\end{tabular}
+\end{center}
+
+\medskip
+\textbf{Simplified output:}  Since $g_5 \Rightarrow \lnot x_4 \Rightarrow g_4$,
+we have $g_4 \lor g_5 = g_4$, so:
+\[
+y = \lnot g_4 = \lnot\bigl((x_1\land x_2)\lor\lnot x_4\bigr)
+  = x_4 \land (\lnot x_1\lor\lnot x_2)
+\]
+
+% ─────────────────────────────────────────────────────────────
+\subsection*{(a) Number of input combinations}
+
+With 4 binary inputs ($x_1,x_2,x_3,x_4$): $\mathbf{2^4 = 16}$ combinations.
+
+% ─────────────────────────────────────────────────────────────
+\subsection*{(b) Full truth table}
+
+\medskip
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|}
+\hline
+$x_1$ & $x_2$ & $x_3$ & $x_4$ & $g_1$ & $g_2$ & $g_3$ & $g_4$ & $g_5$ & $y$ \\
+\hline
+0&0&0&0& 0&1&0&1&0&\textbf{0}\\
+0&0&0&1& 0&0&0&0&0&\textbf{1}\\
+0&0&1&0& 0&1&1&1&1&\textbf{0}\\
+0&0&1&1& 0&0&1&0&0&\textbf{1}\\
+0&1&0&0& 0&1&1&1&1&\textbf{0}\\
+0&1&0&1& 0&0&1&0&0&\textbf{1}\\
+0&1&1&0& 0&1&1&1&1&\textbf{0}\\
+0&1&1&1& 0&0&1&0&0&\textbf{1}\\
+1&0&0&0& 0&1&0&1&0&\textbf{0}\\
+1&0&0&1& 0&0&0&0&0&\textbf{1}\\
+1&0&1&0& 0&1&1&1&1&\textbf{0}\\
+1&0&1&1& 0&0&1&0&0&\textbf{1}\\
+1&1&0&0& 1&1&1&1&1&\textbf{0}\\
+1&1&0&1& 1&0&1&1&0&\textbf{0}\\
+1&1&1&0& 1&1&1&1&1&\textbf{0}\\
+1&1&1&1& 1&0&1&1&0&\textbf{0}\\
+\hline
+\end{tabular}
+\end{center}
+
+$y = \mathrm{TRUE}$ for exactly \textbf{6} input combinations (all have $x_4=1$
+and $(x_1,x_2)\neq(1,1)$).
+
+% ─────────────────────────────────────────────────────────────
+\subsection*{(c) Reduction to SAT}
+
+Introduce a Boolean variable for each gate output: $g_1,g_2,g_3,g_4,g_5,y$.
+Encode each gate as CNF clauses (Tseitin transformation), then assert
+$y = \mathrm{TRUE}$.
+
+\medskip
+\noindent\textbf{AND gate:} $g_1 = x_1 \land x_2$
+\[(\lnot g_1\lor x_1)\land(\lnot g_1\lor x_2)\land(\lnot x_1\lor\lnot x_2\lor g_1)\]
+
+\noindent\textbf{NOT gate:} $g_2 = \lnot x_4$
+\[(\lnot g_2\lor\lnot x_4)\land(g_2\lor x_4)\]
+
+\noindent\textbf{OR gate:} $g_3 = x_3\lor x_2$
+\[(\lnot g_3\lor x_3\lor x_2)\land(\lnot x_3\lor g_3)\land(\lnot x_2\lor g_3)\]
+
+\noindent\textbf{OR gate:} $g_4 = g_1\lor g_2$
+\[(\lnot g_4\lor g_1\lor g_2)\land(\lnot g_1\lor g_4)\land(\lnot g_2\lor g_4)\]
+
+\noindent\textbf{AND gate:} $g_5 = g_2\land g_3$
+\[(\lnot g_5\lor g_2)\land(\lnot g_5\lor g_3)\land(\lnot g_2\lor\lnot g_3\lor g_5)\]
+
+\noindent\textbf{NOR gate:} $y = \lnot(g_4\lor g_5)$
+\[(\lnot y\lor\lnot g_4)\land(\lnot y\lor\lnot g_5)\land(g_4\lor g_5\lor y)\]
+
+\noindent\textbf{Assert output TRUE:} $(y)$
+
+\medskip
+\noindent\textbf{Full SAT instance} (18 clauses):
+\begin{align*}
+&(\lnot g_1\lor x_1)\land(\lnot g_1\lor x_2)\land(\lnot x_1\lor\lnot x_2\lor g_1)\\
+\land\;&(\lnot g_2\lor\lnot x_4)\land(g_2\lor x_4)\\
+\land\;&(\lnot g_3\lor x_3\lor x_2)\land(\lnot x_3\lor g_3)\land(\lnot x_2\lor g_3)\\
+\land\;&(\lnot g_4\lor g_1\lor g_2)\land(\lnot g_1\lor g_4)\land(\lnot g_2\lor g_4)\\
+\land\;&(\lnot g_5\lor g_2)\land(\lnot g_5\lor g_3)\land(\lnot g_2\lor\lnot g_3\lor g_5)\\
+\land\;&(\lnot y\lor\lnot g_4)\land(\lnot y\lor\lnot g_5)\land(g_4\lor g_5\lor y)\\
+\land\;&(y)
+\end{align*}
+
+% ─────────────────────────────────────────────────────────────
+\subsection*{(d) Verification -- SAT is satisfiable for each circuit-satisfying assignment}
+
+All 6 satisfying inputs share the same pattern: $x_4=1$, so $g_2=0$; and
+$(x_1,x_2)\neq(1,1)$, so $g_1=0$.  This gives $g_4=0$, $g_5=0$, $y=1$.
+The value of $x_3$ is irrelevant to $y$ but affects $g_3$.
+
+\medskip
+\noindent\textbf{Representative case:} $(x_1{=}0,x_2{=}0,x_3{=}0,x_4{=}1)$,
+i.e., $g_1{=}0,g_2{=}0,g_3{=}0,g_4{=}0,g_5{=}0,y{=}1$.
+
+\medskip
+\begin{center}
+\begin{tabular}{|l|c|c|}
+\hline
+Clause & Value & Satisfied? \\
+\hline
+$(\lnot g_1\lor x_1)=(1\lor 0)$               & 1 & \checkmark \\
+$(\lnot g_1\lor x_2)=(1\lor 0)$               & 1 & \checkmark \\
+$(\lnot x_1\lor\lnot x_2\lor g_1)=(1\lor 1\lor 0)$ & 1 & \checkmark \\
+$(\lnot g_2\lor\lnot x_4)=(1\lor 0)$          & 1 & \checkmark \\
+$(g_2\lor x_4)=(0\lor 1)$                     & 1 & \checkmark \\
+$(\lnot g_3\lor x_3\lor x_2)=(1\lor 0\lor 0)$ & 1 & \checkmark \\
+$(\lnot x_3\lor g_3)=(1\lor 0)$               & 1 & \checkmark \\
+$(\lnot x_2\lor g_3)=(1\lor 0)$               & 1 & \checkmark \\
+$(\lnot g_4\lor g_1\lor g_2)=(1\lor 0\lor 0)$ & 1 & \checkmark \\
+$(\lnot g_1\lor g_4)=(1\lor 0)$               & 1 & \checkmark \\
+$(\lnot g_2\lor g_4)=(1\lor 0)$               & 1 & \checkmark \\
+$(\lnot g_5\lor g_2)=(1\lor 0)$               & 1 & \checkmark \\
+$(\lnot g_5\lor g_3)=(1\lor 0)$               & 1 & \checkmark \\
+$(\lnot g_2\lor\lnot g_3\lor g_5)=(1\lor 1\lor 0)$ & 1 & \checkmark \\
+$(\lnot y\lor\lnot g_4)=(0\lor 1)$            & 1 & \checkmark \\
+$(\lnot y\lor\lnot g_5)=(0\lor 1)$            & 1 & \checkmark \\
+$(g_4\lor g_5\lor y)=(0\lor 0\lor 1)$         & 1 & \checkmark \\
+$(y)=(1)$                                     & 1 & \checkmark \\
+\hline
+\end{tabular}
+\end{center}
+
+All 18 clauses satisfied. \checkmark
+
+For all other 5 satisfying inputs the intermediate variables follow the same
+pattern ($g_1{=}0,g_2{=}0,g_4{=}0,g_5{=}0,y{=}1$; only $g_3$ may become 1
+when $x_2{=}1$ or $x_3{=}1$).  Every clause remains satisfied by the same
+argument.
+
+\textbf{Conclusion:} For every circuit-satisfying input, assigning the
+corresponding intermediate variable values satisfies the SAT instance --
+confirming the correctness of the reduction.
+
+% ─────────────────────────────────────────────────────────────
+\section*{Question 3 -- 3-SAT to MaxIndSet}
+
+\textbf{Formula:}
+$\Phi = (a\lor a\lor a)\land(\bar{a}\lor\bar{a}\lor\bar{a})\land(b\lor d\lor\bar{c})$
+\quad (Variables: $a,b,c,d$)
+
+% ─────────────────────────────────────────────────────────────
+\subsection*{(a) Reduction to MaxIndSet; value of $k$}
+
+$k = 3$ (one per clause -- $k$ equals the number of clauses in 3-SAT).
+
+\textbf{Construction:} Create one node per literal occurrence (9 nodes total):
+
+\medskip
+\begin{center}
+\begin{tabular}{|c|c|c|}
+\hline
+Node & Clause & Literal \\
+\hline
+1 & $C_1$ & $a$ \\
+2 & $C_1$ & $a$ \\
+3 & $C_1$ & $a$ \\
+4 & $C_2$ & $\bar{a}$ \\
+5 & $C_2$ & $\bar{a}$ \\
+6 & $C_2$ & $\bar{a}$ \\
+7 & $C_3$ & $b$ \\
+8 & $C_3$ & $d$ \\
+9 & $C_3$ & $\bar{c}$ \\
+\hline
+\end{tabular}
+\end{center}
+
+\textbf{Edges added:}
+\begin{enumerate}
+  \item \textbf{Within each clause} (conflict -- can't pick two from same clause):
+    $(1,2),(1,3),(2,3)$ -- clause $C_1$;
+    $(4,5),(4,6),(5,6)$ -- clause $C_2$;
+    $(7,8),(7,9),(8,9)$ -- clause $C_3$.
+  \item \textbf{Between complementary literals across clauses} ($a\leftrightarrow\bar{a}$):
+    $(1,4),(1,5),(1,6),(2,4),(2,5),(2,6),(3,4),(3,5),(3,6)$.
+    ($b,d,\bar{c}$ have no complementary literals in other clauses.)
+\end{enumerate}
+
+\noindent\textbf{Graph:}  Nodes $\{1,\ldots,9\}$;
+$9$ within-clause edges $+$ $9$ cross-clause (complementary) edges
+$= \mathbf{18}$ edges total.
+
+$k = 3$
+
+% ─────────────────────────────────────────────────────────────
+\subsection*{(b) No independent set of size $k = 3$}
+
+To form an IS of size 3, we must pick exactly one node from each clause
+(since nodes within the same clause are all mutually connected).
+
+\begin{itemize}
+  \item Pick any node from $C_1$ $\Rightarrow$ it represents literal $a$.
+  \item Pick any node from $C_2$ $\Rightarrow$ it represents literal $\bar{a}$.
+  \item Nodes representing $a$ ($C_1$) and nodes representing $\bar{a}$ ($C_2$)
+        are \textbf{complementary} -- every such pair has an edge between them.
+\end{itemize}
+
+Therefore, any candidate triple always includes an edge between the $C_1$-node
+and the $C_2$-node.  \textbf{No independent set of size 3 exists.}
+
+(An IS of size 2 does exist, e.g., $\{1,7\}$, but size 3 is impossible.)
+
+% ─────────────────────────────────────────────────────────────
+\subsection*{(c) SAT instance is not satisfiable -- exhaustive check}
+
+$\Phi = (a)\land(\bar{a})\land(b\lor d\lor\bar{c})$
+
+Clauses $C_1$ and $C_2$ alone are already contradictory:
+$C_1 = a$ requires $a = \mathrm{TRUE}$; $C_2 = \bar{a}$ requires $a = \mathrm{FALSE}$.
+
+Full table ($2^4 = 16$ rows; only $a$ matters for satisfiability):
+
+\medskip
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|c|c|c|}
+\hline
+$a$ & $b$ & $c$ & $d$ & $C_1$ & $C_2$ & $C_3$ & $\Phi$ \\
+\hline
+0&0&0&0& F&T&T&\textbf{F}\\
+0&0&0&1& F&T&T&\textbf{F}\\
+0&0&1&0& F&T&F&\textbf{F}\\
+0&0&1&1& F&T&T&\textbf{F}\\
+0&1&0&0& F&T&T&\textbf{F}\\
+0&1&0&1& F&T&T&\textbf{F}\\
+0&1&1&0& F&T&T&\textbf{F}\\
+0&1&1&1& F&T&T&\textbf{F}\\
+1&0&0&0& T&F&T&\textbf{F}\\
+1&0&0&1& T&F&T&\textbf{F}\\
+1&0&1&0& T&F&F&\textbf{F}\\
+1&0&1&1& T&F&T&\textbf{F}\\
+1&1&0&0& T&F&T&\textbf{F}\\
+1&1&0&1& T&F&T&\textbf{F}\\
+1&1&1&0& T&F&T&\textbf{F}\\
+1&1&1&1& T&F&T&\textbf{F}\\
+\hline
+\end{tabular}
+\end{center}
+
+\textbf{All 16 combinations yield $\Phi = \mathrm{FALSE}$.}  The SAT instance
+is \textbf{UNSATISFIABLE}.
+
+This is consistent with the MaxIndSet result: no IS of size $k{=}3$
+$\Leftrightarrow$ the 3-SAT formula is not satisfiable.
+
+% ─────────────────────────────────────────────────────────────
+\section*{Question 4 -- Research}
+
+\subsection*{(a) An NP-complete problem (A) and its NP-hardness proof}
+
+\textbf{Problem A: Vertex Cover (VC)}
+
+\textit{Definition:}  Given a graph $G=(V,E)$ and integer $k$, is there a set
+$S\subseteq V$ with $|S|\le k$ such that every edge has at least one endpoint
+in $S$?
+
+\textit{NP-hardness source:}  Vertex Cover was proved NP-hard by reduction
+from \textbf{Independent Set (IS)}.
+\textit{Reduction:}  A set $S\subseteq V$ is an independent set of size $k$
+in $G$ if and only if $V\setminus S$ is a vertex cover of size $n-k$.  Thus
+a polynomial-time algorithm for VC would solve IS in polynomial time, and IS
+is NP-hard (via 3-SAT $\le_p$ IS reduction).  Since VC is also trivially in
+NP (guess $S$ and verify in polynomial time), VC is \textbf{NP-complete}.
+
+\textit{Reference:}  Karp, R.\ M.\ (1972).
+``Reducibility Among Combinatorial Problems.''
+In \textit{Complexity of Computer Computations}, pp.\ 85--103.
+
+% ─────────────────────────────────────────────────────────────
+\subsection*{(b) An NP-hard problem (B) that is NOT NP-complete}
+
+\textbf{Problem B: Halting Problem}
+
+\textit{Definition:}  Given a Turing machine $M$ and input $w$, does $M$
+halt on $w$?
+
+\textit{NP-hardness source:}  The Halting Problem was proved NP-hard (in fact,
+harder than any NP problem) because every NP problem can be reduced to it via
+a polynomial-time many-one reduction.  In particular, \textbf{SAT} (which is
+NP-complete by the Cook--Levin theorem) reduces to the Halting Problem: given
+a SAT formula $\varphi$, construct a TM that enumerates all variable assignments
+and halts iff it finds a satisfying one.
+
+\textit{Why NOT NP-complete:}  A problem is NP-complete only if it is in NP
+(solvable in nondeterministic polynomial time with a polynomial-length
+certificate).  The Halting Problem is \textbf{undecidable} -- no algorithm of
+any time complexity can solve it -- so it is not in NP, and therefore
+\textbf{not NP-complete}.
+
+\textit{Reference:}  Turing, A.\ M.\ (1936).
+``On Computable Numbers, with an Application to the Entscheidungsproblem.''
+\textit{Proceedings of the London Mathematical Society}, 42(1), 230--265.
+
+\end{document}
